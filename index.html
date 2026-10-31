@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>酒店房态与入住协同 · 知识库与图谱</title>
+<style>
+:root{
+  --bg:#F5F7FB; --panel:#FFFFFF; --line:#E4EAF2; --line2:#EEF2F8;
+  --ink:#16233A; --ink2:#40536B; --mut:#8395AA; --accent:#1B3F96;
+  --sh:0 1px 2px rgba(22,35,58,.04), 0 6px 18px rgba(22,35,58,.05);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;
+  font-size:14px;
+}
+button{font-family:inherit;font-size:12.5px;color:var(--ink2);background:#fff;border:1px solid var(--line);
+  border-radius:8px;height:32px;padding:0 12px;cursor:pointer;transition:.15s;white-space:nowrap}
+button:hover{background:#F3F6FB;border-color:#CFDAE9}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#16367E;border-color:#16367E}
+
+/* ---------------- header ---------------- */
+.hdr{height:64px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;background:#fff;border-bottom:1px solid var(--line);position:relative;z-index:5}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(145deg,#1B3F96,#2F5FD0);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;
+  letter-spacing:.5px;box-shadow:0 2px 8px rgba(27,63,150,.28)}
+.bt{min-width:0}
+.eyebrow{font-size:10px;letter-spacing:.18em;color:var(--mut);text-transform:uppercase;line-height:1}
+.bt h1{font-size:15.5px;font-weight:600;margin:4px 0 2px;letter-spacing:.01em}
+.bt p{margin:0;font-size:11.5px;color:var(--mut)}
+.tools{display:flex;align-items:center;gap:8px}
+.search{position:relative}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.45}
+.search input{width:238px;height:32px;border:1px solid var(--line);border-radius:8px;padding:0 10px 0 31px;
+  font-family:inherit;font-size:12.5px;color:var(--ink);background:#FAFBFD;outline:none;transition:.15s}
+.search input:focus{background:#fff;border-color:#A8BCDA;box-shadow:0 0 0 3px rgba(47,95,208,.08)}
+.search input::placeholder{color:#A2B0C2}
+
+/* ---------------- layout ---------------- */
+.main{display:grid;grid-template-columns:300px 1fr 366px;height:calc(100vh - 64px)}
+.left,.right{background:var(--panel);overflow-y:auto;overscroll-behavior:contain}
+.left{border-right:1px solid var(--line)}
+.right{border-left:1px solid var(--line)}
+.left::-webkit-scrollbar,.right::-webkit-scrollbar{width:8px}
+.left::-webkit-scrollbar-thumb,.right::-webkit-scrollbar-thumb{background:#DCE4EF;border-radius:8px}
+.left::-webkit-scrollbar-track,.right::-webkit-scrollbar-track{background:transparent}
+
+/* ---------------- filters ---------------- */
+.filters{padding:14px 14px 10px;border-bottom:1px solid var(--line2);position:sticky;top:0;background:#fff;z-index:2}
+.fh{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.fh span{font-size:10.5px;letter-spacing:.1em;color:var(--mut)}
+.fh button{height:22px;padding:0 7px;font-size:10.5px;border-radius:6px;color:var(--mut)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.chip{display:flex;align-items:center;gap:6px;height:27px;padding:0 7px;border:1px solid var(--line);
+  border-radius:7px;background:#fff;cursor:pointer;transition:.14s;user-select:none}
+.chip .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.chip .nm{font-size:11.5px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip .ct{font-size:10px;color:var(--mut);font-variant-numeric:tabular-nums}
+.chip.off{opacity:.36;background:#FAFBFD}
+.chip:hover{border-color:#CBD8E8}
+
+/* ---------------- list ---------------- */
+.lh{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;
+  font-size:10.5px;letter-spacing:.1em;color:var(--mut)}
+.lh b{font-weight:600;color:var(--ink2);letter-spacing:0;font-size:11.5px}
+.item{padding:10px 16px 11px;border-bottom:1px solid var(--line2);cursor:pointer;position:relative;transition:.12s}
+.item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:.12s}
+.item:hover{background:#F8FAFD}
+.item.on{background:#EFF4FC}
+.item.on::before{background:var(--accent)}
+.item .tt{display:flex;align-items:center;gap:6px}
+.item .d{width:6px;height:6px;border-radius:50%;flex:none}
+.item .nm{font-size:13px;font-weight:600;color:var(--ink);line-height:1.5;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .br{font-size:11.5px;color:var(--mut);line-height:1.6;margin-top:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item .sub{font-size:10px;color:#9AA9BC;margin-left:auto;flex:none}
+.empty{padding:40px 20px;text-align:center;color:var(--mut);font-size:12px;line-height:1.9}
+
+/* ---------------- stage ---------------- */
+.stage{position:relative;background:
+  radial-gradient(circle at 20% 10%, rgba(47,95,208,.045), transparent 46%),
+  radial-gradient(circle at 82% 88%, rgba(21,154,140,.045), transparent 46%),
+  #F7F9FC;
+  overflow:hidden}
+#cv{display:block;width:100%;height:100%;cursor:grab}
+#cv.drag{cursor:grabbing}
+.hint{position:absolute;left:16px;bottom:14px;display:flex;gap:6px;align-items:center;
+  background:rgba(255,255,255,.86);backdrop-filter:blur(6px);border:1px solid var(--line);
+  border-radius:20px;padding:5px 12px;font-size:11px;color:var(--mut);pointer-events:none}
+.hint i{font-style:normal;color:#C2CDDC}
+.zoomer{position:absolute;right:16px;bottom:14px;display:flex;gap:6px;align-items:center;
+  background:rgba(255,255,255,.9);backdrop-filter:blur(6px);border:1px solid var(--line);
+  border-radius:9px;padding:4px 6px;box-shadow:var(--sh)}
+.zoomer button{height:24px;width:26px;border:none;background:transparent;padding:0;font-size:14px;color:var(--ink2);border-radius:5px}
+.zoomer button:hover{background:#EEF3FA}
+.zoomer .lv{font-size:11px;color:var(--mut);min-width:38px;text-align:center;font-variant-numeric:tabular-nums}
+
+/* ---------------- detail ---------------- */
+.dwrap{padding:18px 18px 40px}
+.dbadge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;padding:3px 9px;border-radius:999px;
+  letter-spacing:.02em;font-weight:600}
+.dwrap h2{font-size:17px;line-height:1.45;margin:11px 0 8px;font-weight:600;letter-spacing:.01em}
+.dbrief{font-size:12.5px;line-height:1.75;color:var(--ink2);margin:0}
+.dsec{margin-top:22px}
+.dsec h3{font-size:10.5px;letter-spacing:.12em;color:var(--mut);font-weight:500;margin:0 0 9px;
+  padding-bottom:7px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between}
+.dsec h3 em{font-style:normal;letter-spacing:0;color:#A9B6C6}
+.dsec p{margin:0;font-size:12.8px;line-height:1.85;color:var(--ink2)}
+.dsec ul{margin:0;padding:0;list-style:none}
+.dsec li{position:relative;padding-left:13px;font-size:12.6px;line-height:1.8;color:var(--ink2);margin-bottom:4px}
+.dsec li::before{content:"";position:absolute;left:2px;top:9px;width:4px;height:4px;border-radius:50%;
+  background:#C6D2E2}
+.rel{display:flex;align-items:center;gap:7px;width:100%;text-align:left;background:none;border:none;
+  border-radius:7px;padding:6px 7px;height:auto;cursor:pointer;transition:.12s}
+.rel:hover{background:#F3F6FB}
+.rel .arw{font-size:11px;color:#B4C0D0;width:12px;flex:none;text-align:center}
+.rel .rl{font-size:10px;color:var(--mut);background:#F2F5FA;border-radius:4px;padding:1px 5px;flex:none}
+.rel .rn{font-size:12.3px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rel .rd{width:6px;height:6px;border-radius:50%;flex:none;margin-left:auto}
+.dsrc{display:flex;flex-wrap:wrap;gap:6px}
+.dsrc span{font-size:10.5px;color:var(--ink2);background:#F4F7FB;border:1px solid var(--line2);
+  border-radius:5px;padding:2px 7px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line2);
+  border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin:16px 0 4px}
+.stats div{background:#fff;padding:11px 8px 10px;text-align:center}
+.stats b{display:block;font-size:19px;font-weight:600;color:var(--ink);letter-spacing:.01em;line-height:1.2}
+.stats span{font-size:10.5px;color:var(--mut)}
+.dempty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 30px;text-align:center;color:var(--mut)}
+.dempty .ic{width:56px;height:56px;border-radius:16px;background:#F0F4FA;display:flex;align-items:center;
+  justify-content:center;margin-bottom:16px}
+.dempty h4{font-size:13.5px;color:var(--ink2);font-weight:600;margin:0 0 8px}
+.dempty p{font-size:12px;line-height:1.85;margin:0;max-width:230px}
+
+/* ---------------- legend ---------------- */
+.lg{padding:14px 16px 22px;border-top:1px solid var(--line2);margin-top:6px}
+.lg h5{font-size:10.5px;letter-spacing:.12em;color:var(--mut);font-weight:500;margin:0 0 10px}
+.lg grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px}
+.lgi{display:flex;align-items:center;gap:7px;font-size:10.8px;color:var(--mut)}
+.lgi svg{flex:none}
+
+/* ---------------- static ---------------- */
+body.static .hdr,body.static .left,body.static .right,body.static .hint,body.static .zoomer{display:none}
+body.static .main{grid-template-columns:1fr;height:100vh}
+body.static #cv{cursor:default}
+body.static .stage{background:#fff}
+.sover{display:none}
+body.static .sover{display:block;position:absolute;inset:0;pointer-events:none}
+.so-l{position:absolute;left:58px;top:76px;width:372px}
+.so-eye{font-size:11px;letter-spacing:.26em;color:#8B9AAD;margin-bottom:14px}
+.so-l h1{font-size:33px;line-height:1.32;margin:0 0 12px;font-weight:600;color:#12203A;letter-spacing:.01em}
+.so-l .so-meta{font-size:12.5px;color:#6C7D93;margin:0 0 18px;letter-spacing:.02em}
+.so-rule{width:52px;height:2px;background:#1B3F96;margin:0 0 18px}
+.so-desc{font-size:12.5px;line-height:2;color:#5A6B82;margin:0 0 30px}
+.so-lg{display:grid;grid-template-columns:1fr 1fr;gap:9px 14px;margin-bottom:22px}
+.so-lg div{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#4C5C73}
+.so-lg i{width:7px;height:7px;border-radius:50%;flex:none}
+.so-lg em{font-style:normal;color:#9AA7B8;margin-left:auto;font-size:10.5px}
+.so-h5{font-size:10px;letter-spacing:.2em;color:#9AA7B8;margin:0 0 11px}
+.so-r{position:absolute;right:58px;bottom:40px;font-size:11px;color:#9AA7B8;letter-spacing:.02em}
+.so-rl{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+
+@media (max-width:1180px){
+  .main{grid-template-columns:260px 1fr 320px}
+  .search input{width:170px}
+}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="brand">
+    <div class="mark">态</div>
+    <div class="bt">
+      <div class="eyebrow">Knowledge Base &amp; Graph</div>
+      <h1>酒店房态与入住协同</h1>
+      <p id="meta">知识条目 · 关系 · 类型</p>
+    </div>
+  </div>
+  <div class="tools">
+    <div class="search">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#7C8CA1" stroke-width="1.6">
+        <circle cx="7" cy="7" r="5"/><path d="M11 11l3.2 3.2" stroke-linecap="round"/>
+      </svg>
+      <input id="q" placeholder="搜索条目、指标、需求…">
+    </div>
+    <button id="btnRelayout">重新布局</button>
+    <button id="btnFit">适配视图</button>
+    <button id="btnPng" class="primary">导出 PNG</button>
+  </div>
+</div>
+
+<div class="main">
+  <aside class="left">
+    <div class="filters">
+      <div class="fh"><span>类型筛选</span><button id="btnAll">全部</button></div>
+      <div class="chips" id="filters"></div>
+    </div>
+    <div class="lh"><span>知识条目</span><b id="count">0</b></div>
+    <div id="list"></div>
+    <div class="lg">
+      <h5>关系类型</h5>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 10px" id="legend"></div>
+    </div>
+  </aside>
+
+  <section class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="hint">拖拽平移 <i>·</i> 滚轮缩放 <i>·</i> 点节点看详情 <i>·</i> 双击空白重排</div>
+    <div class="sover">
+      <div class="so-l">
+        <div class="so-eye">KNOWLEDGE GRAPH</div>
+        <h1>酒店房态与入住协同</h1>
+        <p class="so-meta" id="soMeta"></p>
+        <div class="so-rule"></div>
+        <p class="so-desc">一间房从「退房脏房」走到「可售」，要经过清扫、查房、放行三层状态。这张图把它拆成可核对的实体与关系 —— 颜色区分实体类型，线型区分关系语义。</p>
+        <div class="so-h5">实体类型</div>
+        <div class="so-lg" id="soTypes"></div>
+        <div class="so-h5">关系类型</div>
+        <div class="so-rl" id="soRels"></div>
+      </div>
+      <div class="so-r">源自《酒店房态与入住协同 · 行业现状报告》</div>
+    </div>
+    <div class="zoomer">
+      <button id="zOut">−</button><div class="lv" id="zlv">100%</div><button id="zIn">+</button>
+    </div>
+  </section>
+
+  <aside class="right" id="detail"></aside>
+</div>
+
+<script>
+const DATA = {"meta":{"title":"酒店房态与入住协同 · 知识库","source":"《酒店房态与入住协同·行业现状报告》","nodes":74,"edges":103,"types":12},"types":[{"key":"scene","name":"场景","color":"#16367E"},{"key":"system","name":"系统与岗位","color":"#3E7CB1"},{"key":"state","name":"房态","color":"#159A8C"},{"key":"failure","name":"失效点","color":"#C0432F"},{"key":"mechanism","name":"失真机制","color":"#D08A2C"},{"key":"requirement","name":"需求","color":"#6A4FB6"},{"key":"rule","name":"规则与治理","color":"#2E8B57"},{"key":"ai","name":"AI 能力","color":"#B1488C"},{"key":"metric","name":"指标","color":"#6B7A8F"},{"key":"compliance","name":"合规","color":"#6D4C41"},{"key":"trend","name":"趋势","color":"#2F4858"},{"key":"source","name":"来源","color":"#AEB7C4"}],"nodes":[{"id":"sc_main","type":"scene","name":"房态与入住协同","brief":"客房从退房到可售、前台从查询到承诺入住的跨岗位链路","detail":"住宿业住中运营里最日常、也最容易被当成「本来就这样」的一段：一间房从退房脏房走到可售，要经过清扫、查房、放行三层状态，而这三种状态分属三个岗位、三套系统。","facts":["主链路六环节：预订 → 房态确认 → 清扫 → 查房 → 入住 → 服务回访","跨四类岗位：前台接待、客房部、值班主管、渠道运营","效率改善的入口不在战略层，在这条链的一个字段上"],"src":["src_case"],"sub":""},{"id":"sc_case","label":"山海旅居 案例","type":"scene","name":"山海旅居（案例基线）","sub":"案例","brief":"180 间客房、周末日均 140 次入住 / 36 条访谈事实","detail":"报告采用的合成场景样本，用于把行业通病落到可核对的具体数字上。基线由管理层口径给出，属于待验证假设，不是行业统计。","facts":["180 间客房，周末日均 140 次入住","每日房态核对 2 小时","高峰入住等待 38 分钟（目标 15 分钟）","房态错误每周 24 次（目标 5 次）","6 个岗位、36 条访谈事实"],"src":["src_case"]},{"id":"sc_mid","type":"scene","name":"住中协同","brief":"客人已在店期间的协同：房态解释、交接提醒、异常分派","detail":"酒店 AI 落地最慢的一段。技术门槛不高，难在治理：谁有权把房置为可售、异常超时多久升级、转人工后接手人拒接怎么回退。","facts":["渠道客服、收益管理已规模化，住中协同仍在试点","要求几秒内给出可解释提示，出错时落到有权限的人手上","首期用历史资料回放，再做小范围并行试点"],"src":[],"sub":""},{"id":"sys_pms","label":"PMS","type":"system","name":"PMS","sub":"系统","brief":"预订、入住、房态字段、账务 —— 房态字段的唯一出口","detail":"房态在 PMS 里只是一个被压缩过的字段，看不出查房是否闭环。它是整条链上最不可信的数字，也是三套系统里唯一有权改写房态的入口。","facts":["房态字段是唯一出口，却三态合一","2026 年渗透率已突破 82%，市场约 25.35 亿元","主流 PMS 自带房态差异报表，正因为两个状态每天都在漂移"],"src":["src_wp"]},{"id":"sys_task","type":"system","name":"客房任务平台","sub":"系统","brief":"清扫派单、执行与验收；完成清扫 ≠ 可交付","detail":"管的是任务完成与否，不是房间能不能卖。清扫结果不即时回写 PMS，于是「做完了」和「能卖了」之间出现了一段没人负责的空档。","facts":["派单、执行、验收三段都在平台内","完成清扫不等于可交付","结果不即时回写 PMS"],"src":["src_case"]},{"id":"sys_ch","type":"system","name":"渠道订单库","sub":"系统","brief":"可售库存与渠道售卖；与前台实际可交付不一致","detail":"渠道只看「可售 / 不可售」两态，看不到查房进度与异常，因此常与前台的实际交付能力脱节。","facts":["可售库存的唯一来源","与前台实际可交付经常不一致","OTA 与直连渠道共用同一份库存"],"src":["src_case"]},{"id":"sys_ooo","label":"维修工单 OOO","type":"system","name":"维修工单 / OOO·OOS","sub":"系统","brief":"维修房（OOO）与停用房（OOS）的封锁与解封记录","detail":"房态阶梯里最容易被忽略的两态。解封动作由一个工单触发，但解封后的复检没有对应的系统动作。","facts":["OOO 为维修房、OOS 为停用房，与可售房分属不同库存口径","解封后漏掉异味复查是已知高频风险","异常类型目前没有单列类别"],"src":["src_case"]},{"id":"sys_wx","type":"system","name":"微信群与个人便签","sub":"载体","brief":"关键说明实际停留的地方：不随单据流转、不进审计","detail":"房态说明在现实里主要靠群消息与便签传递。仅发消息不算交接——没有确认、没有版本、没有接手人，事后也追不回来。","facts":["说明留在便签与群里，不随单据流转","仅发消息不算完成交接","隐私信息不得进入公共任务群"],"src":["src_case"]},{"id":"r_front","type":"system","name":"前台接待","sub":"岗位","brief":"房态确认、排房、解释；只能凭一个字段承诺入住","detail":"前台的处境是结构性的：要向客人承诺一个具体时间，手上却只有一个不含查房信息的字段，于是只能打电话确认——这条电话线本身就是等待的来源之一。","facts":["看到的是「可交付」，但无法验证","排房依赖经验：楼层、朝向、只在老员工脑子里","高峰时段同时承担解释与催问"],"src":["src_case"]},{"id":"r_house","type":"system","name":"客房部 / 服务员","sub":"岗位","brief":"清扫、查房、异常分派；说明留在便签与群里","detail":"一人多岗、按经验顺序清扫，完成即标记。房态变更的真实动作发生在这一层，但这一层没有写状态的权限设计，只有「点一下就算完」的按钮。","facts":["按经验排序，无优先级推送","在 PMS 标「已清扫」，手工点一次","房态靠上一班口头交接"],"src":["src_case"]},{"id":"r_sup","type":"system","name":"值班主管","sub":"岗位","brief":"查房与放行口径的实际决定者，也是签核人","detail":"能不能放行，长期由主管口头判断。放行标准没有写成规则，因此也无法验收、无法交接。","facts":["抽查房态、纠正偏差","放行靠口头或便签，不落系统","异常升级的实际决策点"],"src":["src_case"]},{"id":"r_ch","type":"system","name":"渠道运营","sub":"岗位","brief":"管可售库存，与前台口径长期漂移","detail":"渠道运营按可售字段做售卖决策，而可售字段未必等于可交付。差异由前台在客人到店时承担。","facts":["按渠道可售字段售卖","与前台「可交付」口径不一致","差异报表需要人工核对"],"src":["src_case"]},{"id":"st_occ","type":"state","name":"在住脏房","brief":"客人在住，尚未打扫","detail":"房态阶梯的起点。客人在住期间一般不进入可售池，但它与「退房脏房」在系统里常被合并成同一个「脏」语义，于是在清扫排单时，续住房的优先级容易被退房房挤占。","facts":["与退房脏房共用「脏房」语义，排单时难以区分","在住期间不进可售池","清扫优先级常被退房房挤占"],"src":["src_case"],"sub":""},{"id":"st_out","type":"state","name":"退房脏房","brief":"客人离店，等待派单清扫","detail":"等待时间的实际起点，但退房通知靠对讲机或电话传递，起点本身没有系统记录——这是「38 分钟」无法拆解的直接原因，也是 REQ-4 要把计时起点写成书面口径的原因。","facts":["计时起点未定义，属于 REQ-4 要签认的三件事之一","派单依赖前台口头通知客房部","等待主要落在这一段之后"],"src":["src_case"],"sub":""},{"id":"st_clean","type":"state","name":"已清扫","brief":"客房部完成清扫并自检，只代表清扫结束","detail":"「已清扫」记录的是动作完成，不是房间可交付。它离「可售」还差一次查房，但在字段被压缩之后，这一步在系统里看不见。","facts":["由客房部手工标记","标记时间常晚于实际完成时间","不携带查房结论"],"src":["src_case"],"sub":""},{"id":"st_insp","type":"state","name":"已查房","brief":"主管或领班检查通过，查房结论不即时回写","detail":"查房是唯一能发现「扫过了但有问题」的环节。它的结论目前停留在口头与便签，没有形成可签认的记录。","facts":["查房结果不即时回写","与「可售」之间缺一个签认动作","抽查为主，非全量"],"src":["src_case"],"sub":""},{"id":"st_sell","type":"state","name":"可售","brief":"前台可以对客人承诺的状态，也是渠道售卖的依据","detail":"可售应该是一间房经过清扫、查房、放行之后的结果，现实中它常被提前给出，指望查房兜住。","facts":["前台据此承诺入住","渠道据此售卖","与「可交付」并不等价"],"src":["src_case"],"sub":""},{"id":"st_field","type":"state","name":"房态字段（三合一）","brief":"已清扫 / 已查房 / 可售被压进同一个字段","detail":"整条链的技术根因。房态本该是一条阶梯，压成一个字段后，系统从「记录事实」退化成「记录某个人在有空的时候对事实的记忆」。","facts":["三态共用一个字段，前台无法判断查房是否闭环","状态阶梯：在住脏房 → 退房脏房 → 已清扫 → 已查房 → 可售","另需区分维修房 OOO 与停用房 OOS"],"src":["src_case"],"sub":""},{"id":"st_ooo","label":"维修房 OOO/OOS","type":"state","name":"维修房 OOO / 停用房 OOS","brief":"不可售的两类房间，解封时需复检","detail":"OOO 与 OOS 在库存口径上应严格区分。解封动作由工单触发，复检却没有对应的系统节点。","facts":["OOO = 维修房，OOS = 停用房","解封后应复查异味、设施","复检缺失会把问题推到客人到店"],"src":["src_case"],"sub":""},{"id":"f1","type":"failure","name":"F1 三态合一","brief":"字段结构问题：三个状态共用一个字段","detail":"已清扫、已查房、可售共用一个字段。前台看到「可售」也无法判断查房有没有闭环，于是只能打电话确认——这条电话线就是等待的来源之一。","facts":["直接机制：字段结构，不是操作失误","可逆：拆字段即可，不动业务流程","对应 REQ-1"],"src":["src_case"],"sub":""},{"id":"f2","type":"failure","name":"F2 无放行交接点","brief":"清扫完成即被默认可交付，全链没人签字","detail":"整条链上没有一个人对「这间房现在可以卖」做签认。清扫完成被当成可交付，查房结果又不回写，于是放行这个动作实际上不存在。","facts":["直接机制：缺确定性校验与签认动作","与 F4 组合，会把错误推到客人到店那一刻","对应 REQ-1 / REQ-4"],"src":["src_case"],"sub":""},{"id":"f3","type":"failure","name":"F3 交接不留痕","brief":"缺编号、版本、状态、未解决事项、接手人","detail":"交接应含业务编号、版本、状态、未解决事项与接手人，对方确认接手才算闭环。现实是说明留在个人便签和群里，仅发消息不算完成。","facts":["五要素缺一不可","仅发消息不构成交接","交接对象因高流失率频繁更换"],"src":["src_case"],"sub":""},{"id":"f4","type":"failure","name":"F4 解封不复查","brief":"维修房解封后漏掉异味复查，客人到店才发现","detail":"解封由工单触发，复检没有系统节点。这类异常在每周 24 次房态错误里占多少，目前没有拆分数据。","facts":["直接机制：异常类型未单列，无兜底提醒","半可逆：客人到店即失去回退余地","对应 REQ-3"],"src":["src_case"],"sub":""},{"id":"f5","type":"failure","name":"F5 反馈不闭环","brief":"回访与投诉不关联原单与原版本，问题追不回来","detail":"回访记录与投诉处理没有关联业务编号和当时的资料版本，问题无法回溯到具体那一次处理，改进也就无从验证。","facts":["缺原单编号与原版本引用","导致同类问题反复发生","对应 REQ-5"],"src":["src_case"],"sub":""},{"id":"f6","type":"failure","name":"刷新滞后","brief":"每日 2 次更新、两小时核对窗口，快照时间戳失去意义","detail":"房态每天只刷新两次，前台要在两小时的窗口内靠电话确认。刷新滞后会让误判不降反升，因为系统给出的「干净」比现实更旧。","facts":["每日 2 次更新","核对窗口约 2 小时","对应 REQ-6"],"src":["src_case"],"sub":""},{"id":"m1","type":"mechanism","name":"滞后","brief":"11:20 做完，12:40 才标干净","detail":"房间做完与实际标记之间有一段空窗。这 80 分钟里，可售库存被系统自己藏了起来。","facts":["80 分钟库存被系统性隐藏","与刷新周期叠加，误差进一步放大"],"src":[],"sub":""},{"id":"m2","type":"mechanism","name":"批量补录","brief":"十一间房在同一分钟被标记完成","detail":"批量补录让时间戳失去意义——它们并不是同一分钟做完的，因此无法据此计算任何处理时长。","facts":["时间戳失去计量价值","过程数据不可用于分析"],"src":[],"sub":""},{"id":"m3","type":"mechanism","name":"口径不一致","brief":"客房说空房，前台说在住","detail":"岗位各自维护一套口径，差异每天都在漂移。主流 PMS 自带房态差异报表，正是为这件事准备的。","facts":["常见于客房与前台之间","差异报表成为日常核对工具"],"src":[],"sub":""},{"id":"m4","type":"mechanism","name":"乐观标记","brief":"因为「马上就好」先标干净，指望查房兜住","detail":"多数时候查房兜住了，偶尔是客人先发现。这类标记不是恶意，是排班压力下的合理选择。","facts":["把风险后移到客人到店","与 F2 叠加后不可回退"],"src":[],"sub":""},{"id":"req1","label":"REQ-1 三态拆分","type":"requirement","name":"REQ-1 三态拆分 + 只读视图","brief":"把已清扫、已查房、可售拆成三个可核对的状态","detail":"根因层、可逆、成本可控。首期不做写回，只做只读聚合视图，用历史资料回放验证三态可还原。","facts":["首期主体，优先级最高","只读方式，不改变现有系统写入逻辑","验证方式：历史资料回放"],"src":["src_case"],"sub":""},{"id":"req2","label":"REQ-2 交接单","type":"requirement","name":"REQ-2 交接单五要素","brief":"编号、版本、状态、未解决事项、接手人","detail":"把交接从「发个消息」变成一条有确认的记录。先做现场登记，再上模板——顺序反过来会失败。","facts":["五要素：编号 / 版本 / 状态 / 未解决事项 / 接手人","对方确认接手才算闭环","等待的真因大概率在这里"],"src":["src_case"],"sub":""},{"id":"req3","label":"REQ-3 兜底规则","type":"requirement","name":"REQ-3 兜底规则与异常登记","brief":"解封复查等已知风险点写成规则，异常单列类别","detail":"已知高频但缺频次数据。先把异常类别单列出来，才能知道每周 24 次错误里各占多少。","facts":["异常登记单列「解封复检」类别","规则先行，模型只做补充"],"src":["src_case"],"sub":""},{"id":"req4","label":"REQ-4 口径定义","type":"requirement","name":"REQ-4 口径定义","brief":"误判判定人、计时起点、分母 —— 三方书面签认","detail":"口径不清，验收会出现两套解释。这是所有工作的前置条件，也是唯一必须书面签认的一项。","facts":["三件事：误判由谁判定、等待从哪一刻计时、比率的分母是什么","三方书面签认","不做这一步，后续验收无法成立"],"src":["src_case"],"sub":""},{"id":"req5","label":"REQ-5 反馈关联","type":"requirement","name":"REQ-5 反馈关联原单","brief":"每条反馈追到原单、原版本","detail":"决定闭环能否验证。没有原单与原版本的引用，改进就只能靠印象。","facts":["关联业务编号与资料版本","随试点同步收集","支撑复测与验收"],"src":["src_case"],"sub":""},{"id":"req6","label":"REQ-6 快照观测","type":"requirement","name":"REQ-6 快照时间戳与偏差观测","brief":"记录快照时间戳与实际变化偏差","detail":"并行观测项。刷新滞后会让误判不降反升，因此必须知道每个数字是几点几分的快照。","facts":["每个快照带时间戳","观测系统状态与实际状态的时间差","并行观测，不阻塞主线"],"src":["src_case"],"sub":""},{"id":"ru_hard","type":"rule","name":"确定性硬规则","brief":"未查房 / 未放行 → 不可售，由规则判定而非模型","detail":"不可逆动作前必须有一道确定性校验。「这间房能不能卖」这个判断不交给模型，由明确的条件组合决定。","facts":["条件确定、结果可复现","规则优先于模型输出","唯一能提前拦截 F2 的位置"],"src":[],"sub":""},{"id":"ru_pass","type":"rule","name":"前台放行","brief":"人确认房号后交付，对外承诺由人给出","detail":"放行动作由前台执行，系统只提供证据与建议。这是「人负责放行、签核与对外承诺」的具体落点。","facts":["确认房号后交付","对外承诺不交给 AI","每次放行留下操作人与时间"],"src":[],"sub":""},{"id":"ru_sign","type":"rule","name":"主管签核","brief":"抽查房、争议房、异常放行由主管签核","detail":"对不确定的房间保留人工判断权。签核记录是事后审计的关键证据。","facts":["覆盖抽查与异常放行","签核人可追溯"],"src":[],"sub":""},{"id":"ru_manual","type":"rule","name":"人工兜底","brief":"触发原因、接手人、确认时间 —— 三项必须落字段","detail":"转人工不是终点，是一条需要闭合的记录。三项字段缺失，兜底就等于没发生。","facts":["字段：触发原因 / 接手人 / 确认时间","接手人拒接需有回退路径","列入过程性验收"],"src":[],"sub":""},{"id":"ru_ro","type":"rule","name":"只读不写回","brief":"AI 只从三套系统拉取，不执行任何写操作","detail":"首期最重要的一条边界。只读意味着任何错误都不会污染生产数据，也意味着方案随时可回退。","facts":["不写回 PMS / 任务平台 / 渠道库","错误影响面被限制在建议层","成本最低的回退方式"],"src":[],"sub":""},{"id":"ru_perm","label":"字段级权限","type":"rule","name":"字段级权限","brief":"只读视图本身也要做字段级权限","detail":"不能把三套系统的数据全量灌进一个看板。客人身份与房号属于限制访问信息，只有被授权的业务岗位可查看。","facts":["按岗位授权，不按系统授权","隐私信息不进公共任务群","经得起抽查才算合格"],"src":["cp_min"],"sub":""},{"id":"ru_snap","label":"版本快照 2h","type":"rule","name":"版本快照（每 2 小时）","brief":"每个状态带版本与时间戳，可追溯到具体一次快照","detail":"没有版本与时间戳，就无法判断一条建议是基于哪个时点的数据给出的。","facts":["快照周期 2 小时","版本号 + 时间戳成对出现","支撑偏差观测"],"src":[],"sub":""},{"id":"ru_audit","label":"留痕与审计","type":"rule","name":"留痕与审计日志","brief":"业务编号、资料版本、建议结果、人工改动、签核人","detail":"能重建一次处理，才算闭环。审计时要能还原「预订 → 房态确认 → 清扫 → 查房 → 入住 → 回访」中的这一次，同时不记录账号口令与不必要的个人信息。","facts":["五个留痕字段","可重建单次处理","评价记录暂留 90 天，期满复核删除或归档"],"src":[],"sub":""},{"id":"ru_stop","type":"rule","name":"停止条件","brief":"误判 / 越权 / 隐私泄露 —— 触及即暂停复盘","detail":"不带着问题继续跑数据。停止条件是试点协议的一部分，不是事后追责工具。","facts":["三类触发：误判、越权、隐私泄露","暂停后由负责人复盘","恢复需重新评估，不自动续跑"],"src":[],"sub":""},{"id":"ai_split","type":"ai","name":"三态拆分与归一化","brief":"把已清扫 / 已查房 / 可售拆回三个可核对字段","detail":"AI 在这里做的不是判断，是还原：把压缩字段、任务记录与渠道库存对齐成三个独立状态，并对缺失项标注「未知」而不是猜测。","facts":["输出三态 + 置信度与缺失标记","不写回任何系统","首期用历史资料回放验证"],"src":[],"sub":""},{"id":"ai_key","type":"ai","name":"主键 · 版本 · 时间戳校验","brief":"对齐房号 / 业务编号 / 快照时间，标出对不上的记录","detail":"三套系统各自维护主键，同一间房在不同系统里可能对不上。校验输出是「哪条记录对不上」，而不是替人决定用哪个。","facts":["业务编号 + 事件时间作为主键组合","输出冲突清单","刷新滞后在此暴露"],"src":[],"sub":""},{"id":"ai_conf","type":"ai","name":"多源冲突检测","brief":"客房说空房、前台说在住时，把冲突摆出来","detail":"冲突本身是有价值的信息——它说明两个岗位看到的事实不同。AI 只负责发现与并列，不负责裁决。","facts":["并列展示各方状态与时间","不自动选定「正确」一方","冲突频次可用于定位系统性偏差"],"src":[],"sub":""},{"id":"ai_class","type":"ai","name":"异常归类与优先级","brief":"按类型与影响面排序，标出需要人工介入的项","detail":"把「解封未复检」「超时未查房」「状态冲突」分开计数，才谈得上改进。归类结果直接决定人工兜底的入口。","facts":["异常单列类别","按影响面与超时排序","触发转人工记录"],"src":[],"sub":""},{"id":"ai_exp","type":"ai","name":"状态解释与证据摘要","brief":"每条状态附时间、来源、证据，供人核对","detail":"这是 AI 在房态场景最核心的产出：不是「可以卖」，而是「为什么认为可以卖，依据是哪几条记录」。","facts":["输出停在「建议」层","每条结论附证据链","人看、人点、人签"],"src":[],"sub":""},{"id":"ai_draft","type":"ai","name":"交接单草稿与话术建议","brief":"按五要素生成草稿，等人确认后生效","detail":"草稿不是交接。只有当接手人确认，这条记录才成立；AI 只负责把信息填齐、把话说明白。","facts":["按五要素生成","需接手人确认才闭环","话术建议供前台对客解释"],"src":[],"sub":""},{"id":"mt_38","label":"38 分钟等待","type":"metric","name":"38 分钟高峰等待","sub":"目标 15 分钟","brief":"案例基线：高峰入住等待 38 分钟","detail":"报告反复引用的核心体验指标。它是结果指标，不是原因指标——真正要拆的是等待里各占多少。","facts":["当前 38 分钟，方向值 15 分钟","各节点等待与处理时间从未分别测量"],"src":["src_case"]},{"id":"mt_err","label":"24 次/周 房态错误","type":"metric","name":"每周 24 次房态错误","sub":"目标 5 次","brief":"案例基线：房态错误频次","detail":"错误按「次」统计，但没有按类型拆分，因此无法判断解封未复检、状态冲突各占多少。","facts":["当前每周 24 次，目标 5 次","异常类型分布未测量"],"src":["src_case"]},{"id":"mt_chain","label":"连锁化率 41.8%","type":"metric","name":"客房连锁化率 41.80%","brief":"门店连锁化率 28.37%，发达国家可达 70% 以上","detail":"2024 年曾小幅回调至 40.09%，2025 年回升。连锁化率是判断「效率压力落在谁身上」的结构指标。","facts":["客房连锁化率 41.80%","门店连锁化率 28.37%","约 58.2% 为非连锁单体"],"src":["src_cnr"],"sub":""},{"id":"mt_pms","label":"PMS 渗透率 82%","type":"metric","name":"PMS 渗透率 82%","brief":"云端化第一波已完成，竞争转向运营深度","detail":"「有没有系统」已经不是问题。渗透率越过 82% 之后，差距只剩状态可不可信。","facts":["2026 年突破 82%","中国 PMS 市场约 25.35 亿元"],"src":["src_wp"],"sub":""},{"id":"mt_ai","label":"AI 三率 78/1/42","type":"metric","name":"AI 三率：78% / 1% / 42%","brief":"78% 已启用、1% 以 AI 为核心、42% 不追踪 ROI","detail":"热度与深度的落差集中体现。89% 计划扩展场景，但只有 1% 把 AI 作为商业模式核心。","facts":["78% 已启用，89% 计划扩展","1% 以 AI 为核心商业模式","42% 完全不追踪投资回报率","信任度 6.6 分 / 依赖度 4.7 分（10 分制）"],"src":["src_ai"],"sub":""},{"id":"mt_hr","label":"流失率 20.92%","type":"metric","name":"流失率 20.92%","brief":"年均流失率 20.92%，基层岗位超 45%","detail":"交接对象频繁更换，靠记忆的口头交接必然失真。这不是纪律问题，是结构必然。","facts":["年均 20.92%","基层岗位突破 45%"],"src":["src_hr"],"sub":""},{"id":"mt_gap","label":"缺口 200–300 万","type":"metric","name":"基层缺口 200–300 万","brief":"客房、前台、工程三岗合计占缺口七成以上","detail":"新人上手期长，状态判断更依赖系统而不是经验——这恰好是房态可视化的需求来源。","facts":["基层岗位缺口长期维持 200–300 万人","三岗合计占七成以上"],"src":["src_hr"],"sub":""},{"id":"mt_cost","label":"人力成本 35%","type":"metric","name":"人力成本占营收约 35%","brief":"部分中高端酒店超过 40%","detail":"成本刚性上涨，复核与协调工时被优先压缩——这是房态失真的经济动因。","facts":["行业均值约 35%","中高端酒店超 40%","人房比被压到 100 间配 15 人"],"src":["src_hr"],"sub":""},{"id":"mt_mkt","label":"1500 亿 vs 28 亿","type":"metric","name":"1500 亿 vs 28.21 亿","brief":"智慧酒店市场规模与真正的数字化支出不是一个口径","detail":"大量资金流向智能客房设备、弱电改造与工程施工，软件与数据层投入远低于规模数字给人的印象。","facts":["市场规模 2025 年突破 1500 亿元，同比增长 18.5%","数字化支出仅约 28.21 亿元","技术预算占营收 1%–3%，国际水平 4.25%"],"src":["src_wp"],"sub":""},{"id":"mt_scale","label":"1873.6 万间客房","type":"metric","name":"37.47 万家 / 1873.6 万间","brief":"2025 年酒店业设施与客房规模，平均约 50 间/家","detail":"住宿业整体 59.3 万家、2051.5 万间。供给进入相对饱和，市场呈 K 型分化。","facts":["酒店业 374,694 家、1,873.6 万间","住宿业 593,086 家、2,051.5 万间","供给同比 +3.2%，需求仅 +0.4%"],"src":["src_cnr","src_str"],"sub":""},{"id":"cp_face","label":"人脸识别办法","type":"compliance","name":"《人脸识别技术应用安全管理办法》","sub":"2025-06-01 施行","brief":"国家网信办、公安部联合公布，已正式施行","detail":"对酒店最直接的影响是入住环节的强制刷脸被明确否定。任何以「提升入住效率」为由引入的身份核验增强，都需要重新审视合法性。","facts":["2025 年 6 月 1 日起施行","多项酒店已取消入住强制刷脸"],"src":["国家网信办、公安部《人脸识别技术应用安全管理办法》"]},{"id":"cp_free","label":"非强制原则","type":"compliance","name":"非强制原则与私密空间禁装","brief":"有其他方式可实现同目的，不得以人脸识别为唯一方式","detail":"不得以办理业务、提升服务质量为由误导、欺诈、胁迫个人接受人脸识别验证；不得在宾馆客房、公共浴室等私密空间内部安装设备。","facts":["非唯一验证方式原则","不得误导、欺诈、胁迫","客房等私密空间禁装"],"src":["国家网信办、公安部《人脸识别技术应用安全管理办法》"],"sub":""},{"id":"cp_min","label":"最小必要","type":"compliance","name":"最小必要与访问控制","brief":"身份与房号属限制访问信息，按岗位授权","detail":"落到工程上，只读视图也要做字段级权限，而不是把三套系统数据全量灌进一个看板。","facts":["只有被授权的业务岗位可查看","隐私信息不进公共任务群","按用途而非按系统授权"],"src":["国家网信办、公安部《人脸识别技术应用安全管理办法》"],"sub":""},{"id":"cp_trace","label":"可重建留痕","type":"compliance","name":"可重建的留痕","brief":"审计时能重建一次处理，且不记录口令与多余个人信息","detail":"留痕的目的是可解释，不是全量采集。记录什么、留多久，需要按组织规则明确。","facts":["重建单次处理链路","不记录账号口令","评价记录暂留 90 天为起步口径"],"src":["国家网信办、公安部《人脸识别技术应用安全管理办法》"],"sub":""},{"id":"tr1","label":"状态可信化","type":"trend","name":"从「有没有系统」到「状态可不可信」","brief":"竞争焦点转向状态的可信度","detail":"PMS 渗透率过 82% 之后，云端化第一波基本完成，第二波竞争转向楼内的运营深度。","facts":["第一波：摆脱本地服务器","第二波：房态与房务的可信度","客房部是最大的人力科目"],"src":["src_wp"],"sub":""},{"id":"tr2","label":"房态智能战场","type":"trend","name":"房态智能成为云 PMS 新战场","brief":"原生模块、专业房务平台、传感器方案同时在场","detail":"竞争前沿从预订与账务转向房态与房务智能。三种路线各有取舍：数据统一性、功能深度、以及现场愿不愿意多掏一次手机。","facts":["三条路线：原生模块 / 专业房务平台 / 传感器与蓝牙信标","取舍点：数据统一性、功能深度、现场操作成本"],"src":[],"sub":""},{"id":"tr3","label":"AI 解释 · 人放行","type":"trend","name":"AI 做解释、人做放行","brief":"从「+AI」到「AI+」的过渡期，分工比模型更重要","detail":"最有价值的不是更强的模型，而是更清楚的分工：重复判断交给机器，不可逆决定留给人，每次交接做成可追溯的记录。","facts":["90% 以上仍属「+AI」外挂式","AI 负责解释、提示、检索、留痕","人负责放行、签核、对外承诺"],"src":["src_ai"],"sub":""},{"id":"tr4","label":"用工弹性化","type":"trend","name":"用工弹性化 → 交接结构化","brief":"灵活用工、工单制、跨店调配成为常态","detail":"人越流动，交接就必须越结构化。五要素会从「管理规范」变成「系统字段」，这是房态协同类产品真正的长期需求。","facts":["五项从规范变成字段","交接对象不再固定","长期需求而非一次性改造"],"src":[],"sub":""},{"id":"src_cnr","label":"中国饭店协会 2026","type":"source","name":"中国饭店协会《2026 中国酒店业发展报告》","brief":"规模、连锁化率、档次结构、存量竞争判断","detail":"行业规模与结构的权威口径来源，报告中的 37.47 万家、1873.6 万间、41.80% 均出自此处。","facts":["发布方：中国饭店协会","覆盖酒店业与住宿业两套口径"],"src":[],"sub":""},{"id":"src_str","label":"STR / 文旅部","type":"source","name":"STR 口径与文化和旅游部统计","brief":"供给需求增速、OCC / ADR / RevPAR、出租率与平均房价","detail":"两套口径并行：STR 用于同比变化，文旅部用于星级饭店绝对值。","facts":["OCC -3%、ADR -1%、RevPAR -3%","星级饭店平均出租率 46.8%、均价 360.2 元/间夜"],"src":[],"sub":""},{"id":"src_hr","label":"人力资源报告 2025","type":"source","name":"《中国酒店人力资源现状调查报告（2025）》","brief":"人力成本占比、流失率、岗位缺口、人房比","detail":"人力侧数据的来源，配合公开行业报道整理。","facts":["人力成本占营收约 35%","年均流失率 20.92%"],"src":[],"sub":""},{"id":"src_ai","label":"h2c × 石基 2026","type":"source","name":"h2c × 石基《2026 酒店业 AI 与自动化应用报告》","brief":"AI 启用率、核心化比例、ROI 追踪情况","detail":"AI 落地深度的主要来源。启用率与核心化比例的巨大差距，是报告判断四的直接依据。","facts":["78% 启用 / 1% 核心 / 42% 不追踪 ROI"],"src":[],"sub":""},{"id":"src_wp","label":"智慧酒店白皮书","type":"source","name":"《2025 中国智慧酒店行业发展白皮书》","brief":"市场规模、渗透率、数字化支出、PMS 市场","detail":"市场规模与渗透率来源。注意 1500 亿与 28.21 亿并非同一口径。","facts":["市场规模 1500 亿元","数字化支出 28.21 亿元","PMS 市场 25.35 亿元"],"src":[],"sub":""},{"id":"src_case","label":"山海旅居 发现报告","type":"source","name":"《山海旅居 · 业务需求发现报告》","brief":"案例基线、六岗位访谈事实、REQ-1 至 REQ-6","detail":"本项目内部资料。案例数字（180 间、140 次、38 分钟、24 次）来自合成场景访谈，属于待验证假设，不是行业统计。","facts":["6 个岗位、36 条访谈事实","需求编号 REQ-1 至 REQ-6","合成场景，非真实客户数据"],"src":[],"sub":""}],"edges":[["sc_main","sc_mid","contain","属于"],["sc_case","sc_main","contain","样本"],["sc_main","sys_pms","contain","涉及"],["sc_main","sys_task","contain","涉及"],["sc_main","sys_ch","contain","涉及"],["sc_main","r_front","contain","涉及"],["sc_main","r_house","contain","涉及"],["sc_main","r_sup","contain","涉及"],["sc_main","r_ch","contain","涉及"],["sc_main","st_field","contain","核心字段"],["st_occ","st_out","contain","流转"],["st_out","st_clean","contain","流转"],["st_clean","st_insp","contain","流转"],["st_insp","st_sell","contain","流转"],["st_clean","st_field","cause","压入"],["st_insp","st_field","cause","压入"],["st_sell","st_field","cause","压入"],["st_ooo","st_sell","contain","解封"],["sys_pms","st_field","contain","维护"],["sys_task","st_clean","cause","回写（延迟）"],["sys_ch","st_sell","contain","售卖"],["sys_ooo","st_ooo","contain","产生"],["r_front","st_field","depend","只能读取"],["r_house","st_clean","cause","标记"],["r_sup","st_insp","cause","查房"],["r_ch","st_sell","contain","售卖"],["st_field","f1","cause","结构根因"],["sys_task","f2","cause","完成即默认"],["sys_wx","f3","cause","使交接无痕"],["sys_ooo","f4","cause","解封漏检"],["m1","f6","cause","表现为"],["m2","f6","cause","表现为"],["m3","f1","cause","加剧"],["m4","f2","cause","跳过放行"],["m1","st_field","cause","作用于"],["m2","st_field","cause","作用于"],["m3","st_field","cause","作用于"],["m4","st_field","cause","作用于"],["f6","f1","cause","放大失真"],["f5","f3","cause","让问题不可见"],["f1","req1","map","对应"],["f2","req1","map","对应"],["f2","req4","map","对应"],["f3","req2","map","对应"],["f4","req3","map","对应"],["f5","req5","map","对应"],["f6","req6","map","对应"],["req4","req1","depend","前置"],["req1","req2","depend","先后"],["req2","req5","depend","先后"],["req1","req3","depend","前提"],["req1","ai_split","implement","由 AI 执行"],["req1","ai_exp","implement","由 AI 执行"],["req1","ru_ro","implement","以只读方式"],["req2","ai_draft","implement","由 AI 起草"],["req2","ru_snap","implement","要求"],["req2","ru_audit","implement","要求"],["req3","ru_hard","implement","写成规则"],["req3","ru_manual","implement","写成流程"],["req3","ai_class","implement","由 AI 归类"],["req4","ru_hard","implement","口径即规则"],["req5","ru_audit","implement","要求"],["req6","ai_key","implement","由 AI 校验"],["req6","ru_snap","implement","要求"],["ru_ro","ai_split","constrain","限定"],["ru_hard","ai_exp","constrain","规则优先于"],["ai_exp","ru_pass","constrain","输出建议"],["ai_class","ru_manual","cause","触发转人工"],["ru_hard","ru_pass","depend","通过后"],["ru_pass","ru_sign","depend","异常时"],["ru_pass","ru_manual","depend","无法判定时"],["cp_face","cp_free","contain","确立"],["cp_free","ru_perm","constrain","约束"],["cp_min","ru_perm","constrain","约束"],["cp_min","ai_split","constrain","边界"],["cp_trace","ru_audit","constrain","要求"],["sc_case","mt_38","contain","基线"],["sc_case","mt_err","contain","基线"],["f1","mt_38","cause","推高"],["f3","mt_38","cause","真因"],["f2","mt_err","cause","放大"],["f4","mt_err","cause","放大"],["f6","mt_err","cause","放大"],["mt_chain","src_cnr","source","出自"],["mt_scale","src_cnr","source","出自"],["mt_scale","src_str","source","出自"],["mt_pms","src_wp","source","出自"],["mt_mkt","src_wp","source","出自"],["mt_ai","src_ai","source","出自"],["mt_hr","src_hr","source","出自"],["mt_gap","src_hr","source","出自"],["mt_cost","src_hr","source","出自"],["mt_38","src_case","source","出自"],["mt_err","src_case","source","出自"],["mt_pms","tr1","measure","支撑"],["tr1","req1","map","指向"],["tr2","sys_pms","map","指向"],["tr3","ai_exp","map","指向"],["tr3","ru_pass","map","指向"],["tr4","req2","map","指向"],["ru_stop","sc_case","constrain","适用于"],["mt_hr","f3","measure","解释"],["mt_gap","f3","measure","解释"]]};
+const TYPES = DATA.types, TN = {};
+TYPES.forEach(t => TN[t.key] = t);
+
+const REL = {
+  contain:  {name:"包含 / 归属", color:"#C6D0DE", w:1.15, dash:null,   rest:96},
+  cause:    {name:"导致 / 推动", color:"#DCA79B", w:1.45, dash:null,   rest:132},
+  map:      {name:"应对 / 指向", color:"#9BC4AE", w:1.45, dash:null,   rest:138},
+  implement:{name:"落地为",     color:"#BFAFE0", w:1.25, dash:null,   rest:112},
+  depend:   {name:"前置 / 先后", color:"#E0C08E", w:1.3,  dash:[4,3],  rest:124},
+  constrain:{name:"约束 / 限定", color:"#C6A9A0", w:1.25, dash:[5,3],  rest:130},
+  measure:  {name:"度量 / 支撑", color:"#C3CBD7", w:1.1,  dash:[1.5,3],rest:120},
+  source:   {name:"出处",       color:"#D8DEE7", w:1.0,  dash:[1.5,3],rest:92},
+};
+
+/* ---------- 构建节点 ---------- */
+const nodes = DATA.nodes.map(d => ({
+  ...d, deg:0, vx:0, vy:0, x:0, y:0, r:7, fx:null, fy:null
+}));
+const byId = {}; nodes.forEach(n => byId[n.id] = n);
+
+const links = DATA.edges.filter(e => byId[e[0]] && byId[e[1]]).map(e => {
+  const s = byId[e[0]], t = byId[e[1]];
+  s.deg++; t.deg++;
+  return {s, t, rel:e[2], label:e[3]};
+});
+
+nodes.forEach(n => {
+  n.r = Math.max(6.5, Math.min(13, 5.2 + Math.sqrt(n.deg) * 1.7));
+  n.color = (TN[n.type] || {}).color || "#888";
+  n.tname = (TN[n.type] || {}).name || n.type;
+});
+const maxDeg = Math.max(...nodes.map(n => n.deg));
+const disp = n => n.label || n.name;
+
+/* ---------- 初始布局：按类型分簇 ---------- */
+function initPositions(seed){
+  let s = seed || 7;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const groups = {};
+  nodes.forEach(n => (groups[n.type] = groups[n.type] || []).push(n));
+  const keys = TYPES.map(t => t.key).filter(k => groups[k]);
+  keys.forEach((k, gi) => {
+    const ang = (gi / keys.length) * Math.PI * 2 - Math.PI / 2;
+    const R = 330 + (gi % 3) * 60;
+    const cx = Math.cos(ang) * R, cy = Math.sin(ang) * R;
+    const arr = groups[k];
+    const ring = 44 + arr.length * 6;
+    arr.forEach((n, i) => {
+      const a = (i / arr.length) * Math.PI * 2 + gi * 0.7;
+      n.x = cx + Math.cos(a) * ring + (rnd() - .5) * 22;
+      n.y = cy + Math.sin(a) * ring + (rnd() - .5) * 22;
+      n.vx = 0; n.vy = 0; n.fx = null; n.fy = null;
+    });
+  });
+}
+initPositions(11);
+
+/* ---------- 力导向 ---------- */
+const REP = 3600, SPRING = 0.024, GRAV = 0.0052, DAMP = 0.85;
+function tick(alpha){
+  for (let i = 0; i < nodes.length; i++){
+    const a = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++){
+      const b = nodes[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let d2 = dx * dx + dy * dy;
+      if (d2 > 260000) continue;
+      if (d2 < 1){ dx = (Math.random() - .5); dy = (Math.random() - .5); d2 = 1; }
+      const d = Math.sqrt(d2);
+      const f = (REP / d2) * alpha;
+      const fx = dx / d * f, fy = dy / d * f;
+      a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+    }
+  }
+  for (const l of links){
+    const rest = (REL[l.rel] || REL.contain).rest;
+    let dx = l.t.x - l.s.x, dy = l.t.y - l.s.y;
+    const d = Math.max(Math.sqrt(dx * dx + dy * dy), 0.01);
+    const f = (d - rest) * SPRING * alpha;
+    const fx = dx / d * f, fy = dy / d * f;
+    l.s.vx += fx; l.s.vy += fy; l.t.vx -= fx; l.t.vy -= fy;
+  }
+  // 硬碰撞：保证节点之间留出标签空间
+  for (let i = 0; i < nodes.length; i++){
+    const a = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++){
+      const b = nodes[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+      const need = (a.r + b.r + 16);
+      if (d < need){
+        const push = (need - d) / d * 0.5;
+        a.x -= dx * push; a.y -= dy * push;
+        b.x += dx * push; b.y += dy * push;
+      }
+    }
+  }
+  for (const n of nodes){
+    n.vx -= n.x * GRAV * alpha;
+    n.vy -= n.y * GRAV * alpha;
+    if (n.fx !== null){ n.x = n.fx; n.y = n.fy; n.vx = 0; n.vy = 0; continue; }
+    n.vx *= DAMP; n.vy *= DAMP;
+    n.x += Math.max(-14, Math.min(14, n.vx));
+    n.y += Math.max(-14, Math.min(14, n.vy));
+  }
+}
+function settle(iters){
+  let a = 1;
+  for (let i = 0; i < iters; i++){
+    tick(a);
+    a *= 0.988;
+    if (a < 0.02) a = 0.02;
+  }
+}
+settle(520);
+
+/* ---------- 视图 ---------- */
+const cv = document.getElementById('cv');
+const stage = document.getElementById('stage');
+const ctx = cv.getContext('2d');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+let W = 0, H = 0;
+let view = {k:1, tx:0, ty:0};
+let sel = null, hover = null, neighbors = new Set();
+let activeTypes = new Set(TYPES.map(t => t.key));
+let query = '';
+let dragging = null, panning = null, moved = false;
+let labelsAlways = false;
+
+function resize(){
+  W = stage.clientWidth; H = stage.clientHeight;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function bbox(){
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const n of nodes){
+    if (!activeTypes.has(n.type)) continue;
+    x0 = Math.min(x0, n.x - n.r); x1 = Math.max(x1, n.x + n.r);
+    y0 = Math.min(y0, n.y - n.r); y1 = Math.max(y1, n.y + n.r);
+  }
+  return {x0, y0, x1, y1};
+}
+function fitBox(x0, y0, x1, y1, pad){
+  const b = bbox();
+  const k = Math.min((x1 - x0 - pad * 2) / (b.x1 - b.x0), (y1 - y0 - pad * 2) / (b.y1 - b.y0));
+  view.k = Math.max(0.15, Math.min(1.8, k));
+  view.tx = (x0 + x1) / 2 - (b.x0 + b.x1) / 2 * view.k;
+  view.ty = (y0 + y1) / 2 - (b.y0 + b.y1) / 2 * view.k;
+  draw();
+}
+function fit(pad){
+  pad = pad == null ? 70 : pad;
+  const b = bbox();
+  const x0 = pad, x1 = W - pad, y0 = pad * 0.72, y1 = H - pad - 38;
+  const k = Math.min((x1 - x0) / (b.x1 - b.x0), (y1 - y0) / (b.y1 - b.y0));
+  view.k = Math.max(0.18, Math.min(1.6, k));
+  view.tx = (x0 + x1) / 2 - (b.x0 + b.x1) / 2 * view.k;
+  view.ty = (y0 + y1) / 2 - (b.y0 + b.y1) / 2 * view.k;
+  draw();
+}
+
+/* ---------- 绘制 ---------- */
+function visible(n){ return activeTypes.has(n.type) && (!query || match(n)); }
+function match(n){
+  const q = query.toLowerCase();
+  return (n.name + ' ' + (n.brief || '') + ' ' + (n.facts || []).join(' ') + ' ' + n.id).toLowerCase().includes(q);
+}
+
+function draw(){
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const dim = sel ? true : (query ? true : false);
+  const inScope = n => {
+    if (sel) return n === sel || neighbors.has(n.id);
+    if (query) return visible(n);
+    return true;
+  };
+
+  // 边
+  ctx.setTransform(dpr * view.k, 0, 0, dpr * view.k, dpr * view.tx, dpr * view.ty);
+  for (const l of links){
+    if (!visible(l.s) || !visible(l.t)) continue;
+    const on = sel ? (l.s === sel || l.t === sel) : (query ? true : false);
+    const conf = REL[l.rel] || REL.contain;
+    const a = sel ? (on ? 0.95 : 0.05) : (query ? 0.1 : 0.5);
+    ctx.globalAlpha = a;
+    ctx.strokeStyle = on && sel ? conf.color : conf.color;
+    ctx.lineWidth = (on && sel ? conf.w + 0.45 : conf.w) / view.k;
+    if (conf.dash) ctx.setLineDash(conf.dash.map(v => v / view.k)); else ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(l.s.x, l.s.y);
+    ctx.lineTo(l.t.x, l.t.y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // 节点
+  for (const n of nodes){
+    if (!visible(n)) continue;
+    const dimmed = dim && !inScope(n);
+    const isSel = n === sel, isHov = n === hover;
+    ctx.globalAlpha = dimmed ? 0.11 : 1;
+    // 光晕
+    if (isSel || isHov || (query && match(n))){
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r + (isSel ? 7 : 5), 0, Math.PI * 2);
+      ctx.fillStyle = n.color + (isSel ? '24' : '18');
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.lineWidth = (isSel ? 3.2 : 2.1) / 1;
+    ctx.strokeStyle = n.color;
+    ctx.stroke();
+    // 内点
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, Math.max(1.6, n.r * 0.34), 0, Math.PI * 2);
+    ctx.fillStyle = n.color;
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // ---- 标签：贪心避让 ----
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const place = [], obs = [];
+  for (const n of nodes){
+    if (!visible(n)) continue;
+    const sx = n.x * view.k + view.tx, sy = n.y * view.k + view.ty;
+    const rr = n.r * view.k;
+    if (sx < -140 || sx > W + 140 || sy < -70 || sy > H + 70) continue;
+    obs.push({x:sx-rr, y:sy-rr, w:rr*2, h:rr*2, id:n.id});
+  }
+  const ov = (a, b) => {
+    const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    return (w > 0 && h > 0) ? w * h : 0;
+  };
+  const put = (rect, text, color, fs, bold) => {
+    ctx.font = (bold ? '600 ' : '') + fs + 'px "Microsoft YaHei",-apple-system,sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.lineWidth = 3.2; ctx.strokeStyle = 'rgba(255,255,255,.96)';
+    ctx.strokeText(text, rect.x, rect.y);
+    ctx.fillStyle = color;
+    ctx.fillText(text, rect.x, rect.y);
+    place.push(rect);
+  };
+
+  // 先放关系标签，避免被节点名挤掉
+  const focusN = sel || hover;
+  if (focusN){
+    for (const l of links){
+      if (l.s !== focusN && l.t !== focusN) continue;
+      if (!visible(l.s) || !visible(l.t)) continue;
+      const other = l.s === focusN ? l.t : l.s;
+      const mx = (focusN.x + other.x) / 2 * view.k + view.tx;
+      const my = (focusN.y + other.y) / 2 * view.k + view.ty;
+      if (mx < 0 || mx > W || my < 0 || my > H) continue;
+      ctx.font = '10px "Microsoft YaHei",-apple-system,sans-serif';
+      const tw = ctx.measureText(l.label).width;
+      const rect = {x:mx - tw / 2 - 4, y:my - 8, w:tw + 8, h:15};
+      let sc = 0;
+      for (const p of place) sc += ov(rect, p);
+      if (sc > 0) continue;
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(rect.x, rect.y, rect.w, rect.h, 4);
+      else ctx.rect(rect.x, rect.y, rect.w, rect.h);
+      ctx.fill();
+      ctx.fillStyle = '#7C8CA1'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(l.label, mx, my);
+      place.push(rect);
+    }
+  }
+
+  // 节点名
+  const jobs = [];
+  for (const n of nodes){
+    if (!visible(n)) continue;
+    if (dim && !inScope(n)) continue;
+    const sx = n.x * view.k + view.tx, sy = n.y * view.k + view.ty;
+    if (sx < -70 || sx > W + 70 || sy < -34 || sy > H + 34) continue;
+    const isSel = n === sel, isHov = n === hover, isNb = !!sel && neighbors.has(n.id);
+    jobs.push({n, sx, sy, isSel, isHov, isNb,
+      pri: (isSel || isHov) ? 1000 : (isNb ? 500 : n.deg)});
+  }
+  jobs.sort((a, b) => b.pri - a.pri);
+  for (const j of jobs){
+    const n = j.n, sx = j.sx, sy = j.sy;
+    const strong = j.isSel || j.isHov || j.isNb;
+    if (!labelsAlways && view.k < 0.75 && n.deg < 3 && !strong) continue;
+    let text = disp(n).replace(/\s*（[^）]*）\s*/g, '');
+    if (text.length > 16) text = text.slice(0, 15) + '…';
+    const fs = j.isSel ? 12.6 : (j.isNb ? 11.4 : 10.9);
+    const bold = j.isSel;
+    ctx.font = (bold ? '600 ' : '') + fs + 'px "Microsoft YaHei",-apple-system,sans-serif';
+    const tw = ctx.measureText(text).width, th = fs + 3;
+    const rk = n.r * view.k;
+    const cands = [
+      {x:sx - tw / 2, y:sy + rk + 5},
+      {x:sx - tw / 2, y:sy - rk - 5 - th},
+      {x:sx + rk + 7, y:sy - th / 2},
+      {x:sx - rk - 7 - tw, y:sy - th / 2},
+    ];
+    let best = null, bestSc = 1e9;
+    for (const c of cands){
+      const rect = {x:c.x, y:c.y, w:tw, h:th};
+      let sc = 0;
+      for (const o of obs) if (o.id !== n.id) sc += ov(rect, o);
+      for (const p of place) sc += ov(rect, p) * 1.5;
+      if (sc < bestSc){ bestSc = sc; best = rect; }
+    }
+    if (bestSc > tw * th * 0.2 && !strong && !labelsAlways) continue;
+    put(best, text, j.isSel ? '#12203A' : (j.isNb ? '#33465F' : '#5F7089'), fs, bold);
+  }
+
+  // 选中节点外圈装饰
+  if (sel){
+    const sx = sel.x * view.k + view.tx, sy = sel.y * view.k + view.ty;
+    ctx.beginPath();
+    ctx.arc(sx, sy, sel.r * view.k + 9, 0, Math.PI * 2);
+    ctx.strokeStyle = sel.color + '33';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  document.getElementById('zlv').textContent = Math.round(view.k * 100) + '%';
+}
+
+/* ---------- 命中 ---------- */
+function toWorld(px, py){ return {x:(px - view.tx) / view.k, y:(py - view.ty) / view.k}; }
+function hit(px, py){
+  const p = toWorld(px, py);
+  let best = null, bd = 1e9;
+  for (const n of nodes){
+    if (!visible(n)) continue;
+    const d = Math.hypot(n.x - p.x, n.y - p.y);
+    if (d < n.r + 6 && d < bd){ bd = d; best = n; }
+  }
+  return best;
+}
+
+/* ---------- 选择 ---------- */
+function select(n, focus){
+  sel = n;
+  neighbors = new Set();
+  if (n){
+    links.forEach(l => {
+      if (l.s === n) neighbors.add(l.t.id);
+      if (l.t === n) neighbors.add(l.s.id);
+    });
+  }
+  if (focus && n) focusNode(n);
+  renderDetail();
+  renderList();
+  draw();
+}
+function focusNode(n){
+  const k = Math.max(view.k, 1.02);
+  animateView({k, tx: W / 2 - n.x * k, ty: H / 2 - n.y * k}, 300);
+}
+let anim = null;
+function animateView(to, ms){
+  if (anim) cancelAnimationFrame(anim);
+  const from = {...view}, t0 = performance.now();
+  const step = now => {
+    const p = Math.min(1, (now - t0) / ms);
+    const e = 1 - Math.pow(1 - p, 3);
+    view.k = from.k + (to.k - from.k) * e;
+    view.tx = from.tx + (to.tx - from.tx) * e;
+    view.ty = from.ty + (to.ty - from.ty) * e;
+    draw();
+    if (p < 1) anim = requestAnimationFrame(step); else anim = null;
+  };
+  anim = requestAnimationFrame(step);
+}
+
+/* ---------- 交互 ---------- */
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  const n = hit(px, py);
+  moved = false;
+  if (n){ dragging = n; n.fx = n.x; n.fy = n.y; }
+  else { panning = {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty}; cv.classList.add('drag'); }
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove', e => {
+  const r = cv.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  if (dragging){
+    const p = toWorld(px, py);
+    dragging.fx = p.x; dragging.fy = p.y; dragging.x = p.x; dragging.y = p.y;
+    moved = true; draw(); return;
+  }
+  if (panning){
+    view.tx = panning.tx + (e.clientX - panning.x);
+    view.ty = panning.ty + (e.clientY - panning.y);
+    moved = true; draw(); return;
+  }
+  const n = hit(px, py);
+  if (n !== hover){ hover = n; cv.style.cursor = n ? 'pointer' : 'grab'; draw(); }
+});
+cv.addEventListener('pointerup', e => {
+  if (dragging){
+    if (!moved) select(dragging, false);
+    dragging.fx = null; dragging.fy = null; dragging = null;
+    settle(40); draw();
+  } else if (panning){
+    if (!moved){
+      const r = cv.getBoundingClientRect();
+      const n = hit(e.clientX - r.left, e.clientY - r.top);
+      select(n, false);
+    }
+    panning = null; cv.classList.remove('drag');
+  }
+});
+cv.addEventListener('dblclick', e => {
+  const r = cv.getBoundingClientRect();
+  if (!hit(e.clientX - r.left, e.clientY - r.top)) relayout();
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  const k2 = Math.max(0.2, Math.min(3.2, view.k * Math.exp(-e.deltaY * 0.0014)));
+  const wx = (px - view.tx) / view.k, wy = (py - view.ty) / view.k;
+  view.k = k2;
+  view.tx = px - wx * k2; view.ty = py - wy * k2;
+  draw();
+}, {passive:false});
+
+function relayout(){
+  initPositions(Math.floor(Math.random() * 9999) + 3);
+  settle(600);
+  fit(80);
+}
+
+/* ---------- 侧栏 ---------- */
+function renderFilters(){
+  const box = document.getElementById('filters');
+  box.innerHTML = '';
+  TYPES.forEach(t => {
+    const c = document.createElement('div');
+    c.className = 'chip' + (activeTypes.has(t.key) ? '' : ' off');
+    c.dataset.k = t.key;
+    const n = nodes.filter(x => x.type === t.key).length;
+    c.innerHTML = `<span class="dot" style="background:${t.color}"></span>
+      <span class="nm">${t.name}</span><span class="ct">${n}</span>`;
+    c.onclick = () => {
+      if (activeTypes.has(t.key)) activeTypes.delete(t.key); else activeTypes.add(t.key);
+      if (sel && !activeTypes.has(sel.type)) select(null, false);
+      c.classList.toggle('off');
+      renderList(); draw();
+    };
+    box.appendChild(c);
+  });
+}
+
+function renderList(){
+  const list = document.getElementById('list');
+  const arr = nodes.filter(n => activeTypes.has(n.type) && (!query || match(n)));
+  arr.sort((a, b) => {
+    const ia = TYPES.findIndex(t => t.key === a.type), ib = TYPES.findIndex(t => t.key === b.type);
+    return ia - ib || b.deg - a.deg;
+  });
+  document.getElementById('count').textContent = arr.length;
+  if (!arr.length){
+    list.innerHTML = '<div class="empty">没有匹配的条目<br>试试换个关键词，或放开类型筛选</div>';
+    return;
+  }
+  list.innerHTML = arr.map(n => `
+    <div class="item ${sel && sel.id === n.id ? 'on' : ''}" data-id="${n.id}">
+      <div class="tt">
+        <span class="d" style="background:${n.color}"></span>
+        <span class="nm">${n.name}</span>
+        ${n.sub ? `<span class="sub">${n.sub}</span>` : ''}
+      </div>
+      <div class="br">${n.brief || ''}</div>
+    </div>`).join('');
+  list.querySelectorAll('.item').forEach(el => {
+    el.onclick = () => select(byId[el.dataset.id], true);
+  });
+}
+
+function relRow(dir, other, label){
+  const arrow = dir === 'out' ? '→' : '←';
+  return `<button class="rel" data-id="${other.id}">
+    <span class="arw">${arrow}</span><span class="rl">${label}</span>
+    <span class="rn">${disp(other)}</span>
+    <span class="rd" style="background:${other.color}"></span>
+  </button>`;
+}
+
+function renderDetail(){
+  const box = document.getElementById('detail');
+  if (!sel){
+    const picks = ['st_field', 'f1', 'req1', 'ai_exp', 'ru_stop'];
+    const top = nodes.filter(n => n.type !== 'source').slice().sort((a,b) => b.deg - a.deg).slice(0, 6);
+    box.innerHTML = `<div class="dwrap">
+      <span class="dbadge" style="background:#1B3F9610;color:#1B3F96">图谱总览</span>
+      <h2>从一间房的「可售」开始</h2>
+      <p class="dbrief">这张图把报告里的判断拆成可核对的事实：房态字段为什么失真、五个失效点各自通向哪条需求、
+        规则与 AI 又分别落在哪一层。</p>
+      <div class="stats">
+        <div><b>${nodes.length}</b><span>知识条目</span></div>
+        <div><b>${links.length}</b><span>语义关系</span></div>
+        <div><b>${TYPES.length}</b><span>实体类型</span></div>
+      </div>
+      <div class="dsec"><h3>从这几个入口开始</h3>
+        ${picks.map(id => relRow('out', byId[id], byId[id].tname)).join('')}
+      </div>
+      <div class="dsec"><h3>连接最多<em>hub</em></h3>
+        ${top.map(n => relRow('out', n, n.deg + ' 边')).join('')}
+      </div>
+      <div class="dsec"><h3>怎么用</h3>
+        <ul>
+          <li>点任意节点：其余节点淡出，只留它的邻居与关系标签</li>
+          <li>点详情里的关联条目：顺着链路继续走，形成一条阅读路径</li>
+          <li>左侧可按类型筛选，也可以在搜索框里直接找「交接」「38 分钟」</li>
+        </ul>
+      </div>
+    </div>`;
+    box.querySelectorAll('.rel').forEach(el => {
+      if (el.dataset.id) el.onclick = () => select(byId[el.dataset.id], true);
+    });
+    return;
+  }
+  const n = sel;
+  const outs = links.filter(l => l.s === n);
+  const ins = links.filter(l => l.t === n);
+  const typesSeen = [...new Set([...outs.map(l => l.t), ...ins.map(l => l.s)])].length;
+
+  box.innerHTML = `<div class="dwrap">
+    <span class="dbadge" style="background:${n.color}14;color:${n.color}">${n.tname}${n.sub ? ' · ' + n.sub : ''}</span>
+    <h2>${n.name}</h2>
+    <p class="dbrief">${n.brief || ''}</p>
+    ${n.detail ? `<div class="dsec"><h3>说明</h3><p>${n.detail}</p></div>` : ''}
+    ${(n.facts && n.facts.length) ? `<div class="dsec"><h3>关键事实<em>${n.facts.length}</em></h3>
+      <ul>${n.facts.map(f => `<li>${f}</li>`).join('')}</ul></div>` : ''}
+    <div class="dsec"><h3>关联<em>${outs.length + ins.length} 条 · ${typesSeen} 类</em></h3>
+      ${outs.map(l => relRow('out', l.t, l.label)).join('')}
+      ${ins.map(l => relRow('in', l.s, l.label)).join('')}
+    </div>
+    ${(n.src && n.src.length) ? `<div class="dsec"><h3>出处</h3><div class="dsrc">
+      ${n.src.map(s => `<span>${(byId[s] ? byId[s].name : s)}</span>`).join('')}</div></div>` : ''}
+  </div>`;
+  box.querySelectorAll('.rel').forEach(el => {
+    el.onclick = () => select(byId[el.dataset.id], true);
+  });
+  box.scrollTop = 0;
+}
+
+function renderLegend(){
+  const box = document.getElementById('legend');
+  box.innerHTML = Object.values(REL).map(r => `
+    <div class="lgi">
+      <svg width="18" height="6"><line x1="0" y1="3" x2="18" y2="3" stroke="${r.color}" stroke-width="${r.w + .4}"
+        ${r.dash ? `stroke-dasharray="${r.dash.join(',')}"` : ''}/></svg>
+      <span>${r.name}</span>
+    </div>`).join('');
+}
+
+/* ---------- 工具栏 ---------- */
+document.getElementById('q').addEventListener('input', e => {
+  query = e.target.value.trim();
+  if (sel && query && !match(sel)) select(null, false);
+  renderList(); draw();
+});
+document.getElementById('btnAll').onclick = () => {
+  activeTypes = new Set(TYPES.map(t => t.key));
+  renderFilters(); renderList(); draw();
+};
+document.getElementById('btnFit').onclick = () => fit(70);
+document.getElementById('btnRelayout').onclick = () => { select(null, false); relayout(); };
+document.getElementById('zIn').onclick = () => {
+  const k = Math.min(3.2, view.k * 1.25), cx = W / 2, cy = H / 2;
+  const wx = (cx - view.tx) / view.k, wy = (cy - view.ty) / view.k;
+  view.k = k; view.tx = cx - wx * k; view.ty = cy - wy * k; draw();
+};
+document.getElementById('zOut').onclick = () => {
+  const k = Math.max(0.2, view.k / 1.25), cx = W / 2, cy = H / 2;
+  const wx = (cx - view.tx) / view.k, wy = (cy - view.ty) / view.k;
+  view.k = k; view.tx = cx - wx * k; view.ty = cy - wy * k; draw();
+};
+document.getElementById('btnPng').onclick = () => {
+  const a = document.createElement('a');
+  a.download = '知识图谱_导出.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+};
+window.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement.id !== 'q'){ e.preventDefault(); document.getElementById('q').focus(); }
+  if (e.key === 'Escape'){ select(null, false); document.getElementById('q').blur(); }
+});
+
+/* ---------- 启动 ---------- */
+const isStatic = /[?&]static=1/.test(location.search);
+if (isStatic) document.body.classList.add('static');
+document.getElementById('meta').textContent =
+  `${nodes.length} 个知识条目 · ${links.length} 条关系 · ${TYPES.length} 类`;
+renderFilters(); renderLegend(); renderList(); renderDetail();
+resize();
+if (isStatic){
+  labelsAlways = true;
+  document.getElementById('soMeta').textContent =
+    `${nodes.length} 个知识条目 · ${links.length} 条语义关系 · ${TYPES.length} 类实体`;
+  document.getElementById('soTypes').innerHTML = TYPES.map(t =>
+    `<div><i style="background:${t.color}"></i>${t.name}<em>${nodes.filter(n => n.type === t.key).length}</em></div>`).join('');
+  document.getElementById('soRels').innerHTML = Object.values(REL).map(r =>
+    `<div style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#5A6B82">
+      <svg width="16" height="6"><line x1="0" y1="3" x2="16" y2="3" stroke="${r.color}" stroke-width="1.8"
+        ${r.dash ? `stroke-dasharray="${r.dash.join(',')}"` : ''}/></svg>${r.name}</div>`).join('');
+  nodes.forEach(n => n.x *= 1.34);
+  requestAnimationFrame(() => fitBox(438, 26, W - 38, H - 34, 16));
+} else {
+  fit(80);
+  const m = location.search.match(/[?&]sel=([\w-]+)/);
+  if (m && byId[m[1]]) select(byId[m[1]], true);
+}
+</script>
+</body>
+</html>
