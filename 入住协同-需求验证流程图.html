@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>酒店入住协同 · 需求验证流程图</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:48px 24px 64px;background:#faf9f6;color:#1f1e1c;line-height:1.6;
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:1000px;margin:0 auto}
+.kicker{font-size:11.5px;letter-spacing:.16em;color:#9a978e;margin:0 0 12px;font-weight:500}
+h1{font-size:26px;font-weight:600;margin:0 0 10px;letter-spacing:-.01em}
+.sub{font-size:14px;color:#5f5e5a;margin:0 0 22px;max-width:680px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px}
+.meta i{font-style:normal;font-size:12px;padding:3px 10px;border-radius:20px;border:1px solid #e6e3da;background:#fff;color:#6d6b66}
+.meta i b{font-weight:600;color:#1f1e1c}
+.legend{display:flex;flex-wrap:wrap;gap:20px;padding:13px 18px;background:#fff;border:1px solid #ebe8e1;border-radius:10px;margin-bottom:34px}
+.lg{font-size:12.5px;color:#5f5e5a;display:flex;align-items:center}
+.sw{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:7px;border:1px solid}
+.flow{position:relative}
+.row{display:grid;grid-template-columns:54px 1fr;gap:0 16px;padding-bottom:24px;position:relative}
+.row:last-child{padding-bottom:0}
+.rail{position:relative;display:flex;justify-content:center;padding-top:17px}
+.rail::before{content:"";position:absolute;top:0;bottom:-24px;left:50%;width:2px;margin-left:-1px;background:#e5e2d9}
+.row:first-child .rail::before{top:17px}
+.row:last-child .rail::before{display:none}
+.badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:600;position:relative;z-index:1;background:#fff;border:1.5px solid #b4b2a9;color:#5f5e5a}
+.row.fact .badge{border-color:#b4b2a9;color:#5f5e5a}
+.row.p0 .badge{border-color:#e08b8b;color:#a32d2d}
+.row.p1 .badge{border-color:#e0a13f;color:#8a5410}
+.row.p2 .badge{border-color:#97c459;color:#3b6d11}
+.row.out .badge{border-color:#85b7eb;color:#185fa5;background:#e6f1fb}
+.dia{width:15px;height:15px;transform:rotate(45deg);border-radius:3px;background:#eeedfe;border:1.5px solid #a49de0;position:relative;z-index:1}
+.card{background:#fff;border:1px solid #eae7e0;border-radius:12px;padding:17px 20px 16px;border-left:3px solid #d6d3ca}
+.row.fact .card{border-left-color:#b4b2a9}
+.row.p0 .card{border-left-color:#e08b8b}
+.row.p1 .card{border-left-color:#e0a13f}
+.row.p2 .card{border-left-color:#97c459}
+.row.out .card{border-left-color:#5c9ee0;background:#fbfdff}
+.ch{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-bottom:2px}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;letter-spacing:.02em}
+.tag.f{background:#f1efe8;color:#5f5e5a}
+.tag.r{background:#fcebeb;color:#a32d2d}
+.tag.a{background:#faeeda;color:#8a5410}
+.tag.g{background:#eaf3de;color:#3b6d11}
+.tag.p{background:#eeedfe;color:#534ab7}
+.tag.b{background:#e6f1fb;color:#185fa5}
+h2{font-size:15.5px;font-weight:600;margin:0;line-height:1.45}
+.pts{margin:11px 0 0;padding:0;list-style:none}
+.pts li{position:relative;padding-left:14px;font-size:13.5px;color:#3d3b38;margin-top:6px}
+.pts li::before{content:"";position:absolute;left:2px;top:9px;width:4px;height:4px;border-radius:50%;background:#cbc8bf}
+.pts li em{font-style:normal;color:#8a5410;font-weight:500}
+.ver{margin-top:12px;background:#f7f6f1;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#514f4b}
+.ver s{text-decoration:none;font-weight:600;color:#1f1e1c;margin-right:6px}
+.back{margin-top:9px;font-size:12.5px;color:#a32d2d;display:flex;gap:6px}
+.back s{text-decoration:none;font-weight:600}
+.owner{margin-top:12px;padding-top:10px;border-top:1px dashed #ece9e0;font-size:12.5px;color:#6d6b66;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.owner u{text-decoration:none;font-size:10.5px;color:#a3a099;border:1px solid #e8e5dc;border-radius:4px;padding:0 5px;letter-spacing:.04em}
+.branches{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:14px}
+.br{background:#fdfaf1;border:1px solid #f2e6c9;border-radius:9px;padding:12px 13px 13px;border-top:2px solid #e8b261}
+.br h3{font-size:13px;margin:0 0 5px;font-weight:600;line-height:1.45}
+.br p{font-size:12.5px;color:#63615c;margin:0}
+.br p+p{margin-top:5px}
+.br .mini{display:inline-block;font-size:10.5px;color:#8a5410;background:#faedda;border-radius:4px;padding:1px 6px;margin-bottom:7px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}
+.fb{background:#f5f8fc;border:1px solid #dce8f6;border-radius:9px;padding:12px 13px}
+.fb h3{font-size:13px;margin:0 0 5px;font-weight:600;color:#185fa5}
+.fb p{font-size:12.5px;color:#5b6169;margin:0}
+footer{margin-top:34px;padding-top:16px;border-top:1px solid #e8e5dc;font-size:12px;color:#9a978e;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media(max-width:780px){
+  body{padding:32px 16px 48px}
+  h1{font-size:22px}
+  .branches,.pair{grid-template-columns:1fr}
+  .row{grid-template-columns:40px 1fr;gap:0 12px}
+}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">Discovery report → Flow</p>
+  <h1>酒店入住协同 · 需求验证流程图</h1>
+  <p class="sub">三套系统各管一段，房态口径没有统一出口。下面这条路径从现有事实出发，先拆口径、再定范围、最后落到一期只读视图——每一步都带可验证的出口条件，而不是先做功能再补验收。</p>
+  <div class="meta">
+    <i>假设 <b>6</b> 条</i>
+    <i>P0 <b>2</b></i>
+    <i>P1 <b>3</b></i>
+    <i>P2 <b>1</b></i>
+    <i>状态 <b>待验证</b></i>
+  </div>
+
+  <div class="legend">
+    <span class="lg"><i class="sw" style="background:#f1efe8;border-color:#b4b2a9"></i>现状事实</span>
+    <span class="lg"><i class="sw" style="background:#fcebeb;border-color:#e08b8b"></i>P0 先决</span>
+    <span class="lg"><i class="sw" style="background:#faeeda;border-color:#e0a13f"></i>P1 并行</span>
+    <span class="lg"><i class="sw" style="background:#eaf3de;border-color:#97c459"></i>P2 收口</span>
+    <span class="lg"><i class="sw" style="background:#eeedfe;border-color:#a49de0"></i>判定关口</span>
+    <span class="lg"><i class="sw" style="background:#e6f1fb;border-color:#5c9ee0"></i>一期交付</span>
+  </div>
+
+  <div class="flow">
+
+    <div class="row fact">
+      <div class="rail"><span class="badge">A</span></div>
+      <div class="card">
+        <div class="ch"><span class="tag f">现状事实</span><h2>三个系统各管一段，业务状态没有统一视图</h2></div>
+        <ul class="pts">
+          <li>PMS、客房任务平台、渠道订单库并行使用，账号权限各自独立维护</li>
+          <li>房态被压成一个字段：<em>已清扫 / 已查房 / 可售</em> 混在一起，无法区分</li>
+          <li>状态每天只更新两次，超过一个更新周期即需标为“待刷新”</li>
+          <li>现有前台与调度依靠人工经验兜底，流程不中断但不可信</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row fact">
+      <div class="rail"><span class="badge">B</span></div>
+      <div class="card">
+        <div class="ch"><span class="tag f">前置校验</span><h2>先查记录本身对不对，再谈状态准不准</h2></div>
+        <ul class="pts">
+          <li>对订单、清扫查房、维修、客人需求、换房记录逐条核对：主编号 · 事件时间 · 版本字段</li>
+          <li>三项齐备的记录才进入样本池；有歧义的记录转入人工修复队列</li>
+        </ul>
+        <div class="ver"><s>出口</s>样本池可用，歧义记录已隔离，自动推荐不消费脏数据</div>
+      </div>
+    </div>
+
+    <div class="row p0">
+      <div class="rail"><span class="dia"></span></div>
+      <div class="card">
+        <div class="ch"><span class="tag p">判定口 1</span><span class="tag r">P0</span><h2>三态字段拆开后，能解释真实的“以为可入住”事件吗</h2></div>
+        <ul class="pts">
+          <li>对前台、客房调度各做一次访谈，收集近两周「以为可入住但查房未完成」的具体事件与时间点</li>
+          <li>核对拆分后的状态定义能否覆盖这些事件</li>
+        </ul>
+        <div class="ver"><s>验收</s>以事件可解释率为准，不以访谈覆盖率代替</div>
+        <div class="back"><s>未通过</s><span>→ 补字段拆分与状态定义，回到 B 重新校验</span></div>
+        <div class="owner"><u>负责</u>运营经理牵头 · PMS 工程师配合</div>
+      </div>
+    </div>
+
+    <div class="row p0">
+      <div class="rail"><span class="dia"></span></div>
+      <div class="card">
+        <div class="ch"><span class="tag p">判定口 2</span><span class="tag r">P0</span><h2>一期范围锁定在只读聚合，写回分派推到二期</h2></div>
+        <ul class="pts">
+          <li>一期只做房态与任务的只读展示，不自动分配房间、不涉及开门锁</li>
+          <li>写回分派单列：审批层级、异常兜底责任、以哪套系统状态为准</li>
+        </ul>
+        <div class="ver"><s>验收</s>运营经理书面确认一期范围；写回形成待批清单，本期不承诺任何写能力</div>
+        <div class="back"><s>未通过</s><span>→ 写回诉求挂起为二期待批项，不影响一期推进</span></div>
+        <div class="owner"><u>负责</u>运营经理决策 · PMS 工程师评估</div>
+      </div>
+    </div>
+
+    <div class="row p1">
+      <div class="rail"><span class="badge">C</span></div>
+      <div class="card">
+        <div class="ch"><span class="tag a">P1 并行</span><h2>三条支线可以同时推，不必互相等</h2></div>
+        <div class="branches">
+          <div class="br">
+            <span class="mini">过期识别</span>
+            <h3>超期必须看得见</h3>
+            <p>过期判定同时具备时间戳、版本号、待刷新标识。</p>
+            <p>用模拟快照做桌面演练，看前台是否会停据此承诺入住。</p>
+          </div>
+          <div class="br">
+            <span class="mini">修复队列</span>
+            <h3>歧义记录谁清、怎么清</h3>
+            <p>明确责任人与清理时限；修复前在前台是隐藏还是加待修复标识。</p>
+            <p>以一条真实歧义记录走通全流程作为最小验证。</p>
+          </div>
+          <div class="br">
+            <span class="mini">定序</span>
+            <h3>拆字段还是先对账</h3>
+            <p>先统计主编号不一致是偶发还是高频。</p>
+            <p>用频次结果决定对账是否与字段拆分同期启动，不靠单方判断定序。</p>
+          </div>
+        </div>
+        <div class="owner"><u>负责</u>PMS 工程师设计 · 前台与调度确认展示位置 · 客房调度与服务质量共担修复队列</div>
+      </div>
+    </div>
+
+    <div class="row p2">
+      <div class="rail"><span class="badge">D</span></div>
+      <div class="card">
+        <div class="ch"><span class="tag g">P2 收口</span><h2>验收标准由业务侧先定，不能拿系统侧表述顶替</h2></div>
+        <ul class="pts">
+          <li>运营经理组织一次范围确认会，输出一期优先环节 + 可度量验收口径草案</li>
+          <li>服务质量与客人体验视角单独访谈后补充</li>
+        </ul>
+        <div class="ver"><s>出口</s>业务口径先于技术方案成立，后续开发按此口径验收</div>
+        <div class="owner"><u>负责</u>运营经理牵头 · 服务质量与客人体验参与</div>
+      </div>
+    </div>
+
+    <div class="row out">
+      <div class="rail"><span class="badge">E</span></div>
+      <div class="card">
+        <div class="ch"><span class="tag b">一期交付</span><h2>只读统一视图 + 待刷新标识 + 人工修复队列</h2></div>
+        <ul class="pts">
+          <li>房态与任务在同一视图可读，但不具备任何调度与开锁能力</li>
+          <li>超期数据带“待刷新”标识，不作为实时承诺依据</li>
+          <li>歧义记录走人工队列，人工流程并行运行、不中断</li>
+        </ul>
+        <div class="pair">
+          <div class="fb">
+            <h3>接口中断时</h3>
+            <p>继续使用带时间戳的上一份只读快照，界面显示“暂未更新”，人工流程照旧。</p>
+          </div>
+          <div class="fb">
+            <h3>重连之后</h3>
+            <p>按业务编号去重补齐，同一待办不重复触发；缺口数据回填后再恢复正常刷新。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>来源：discovery-report.csv · 6 条需求假设（均为在线模型提出的待验证假设）</span>
+    <span>2026-10-29</span>
+  </footer>
+</main>
+</body>
+</html>
